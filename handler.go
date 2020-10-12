@@ -1,12 +1,13 @@
 package nosurf
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 )
 
 const (
-	cookieName = "asdf"
+	cookieName = "name"
 )
 
 // CSRFHandler is a struct
@@ -33,14 +34,9 @@ func New(handler http.Handler) *CSRFHandler {
 }
 
 func (h *CSRFHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("vary", "cookie")
-	if r.Method == "GET" || r.Method == "HEAD" {
-		h.successHandler.ServeHTTP(w, r)
-		return
-	}
-
+	var token string
+	r = r.WithContext(context.WithValue(r.Context(), nosurfKey, &token))
 	var realToken []byte
-
 	tokenCookie, err := r.Cookie(cookieName)
 	if err == nil {
 		realToken, err = base64.StdEncoding.DecodeString(tokenCookie.Value)
@@ -55,6 +51,12 @@ func (h *CSRFHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctxSetToken(r, realToken)
 	}
 
+	w.Header().Add("vary", "cookie")
+	if r.Method == "GET" || r.Method == "HEAD" {
+		h.successHandler.ServeHTTP(w, r)
+		return
+	}
+
 	// For MITM attacks
 	// if r.URL.Scheme == "https" {
 	// 	referer, err := url.Parse(r.Header.Get("Referer"))
@@ -64,7 +66,7 @@ func (h *CSRFHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }
 
-	sentToken, err := base64.StdEncoding.DecodeString(r.Header.Get("asdf"))
+	sentToken, err := base64.StdEncoding.DecodeString(r.Header.Get(cookieName))
 	if err != nil {
 		sentToken = nil
 	}
