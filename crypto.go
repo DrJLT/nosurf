@@ -5,8 +5,6 @@ import (
 	"io"
 )
 
-// Masks/unmasks the given data *in place*
-// with the given key
 // Slices must be of the same length, or oneTimePad will panic
 func oneTimePad(data, key []byte) {
 	n := len(data)
@@ -24,10 +22,7 @@ func maskToken(data []byte) []byte {
 		return nil
 	}
 
-	// tokenLength*2 == len(enckey + token)
 	result := make([]byte, 2*tokenLength)
-	// the first half of the result is the OTP
-	// the second half is the masked token itself
 	key := result[:tokenLength]
 	token := result[tokenLength:]
 	copy(token, data)
@@ -46,9 +41,8 @@ func unmaskToken(data []byte) []byte {
 		return nil
 	}
 
-	key := data[:tokenLength]
 	token := data[tokenLength:]
-	oneTimePad(token, key)
+	oneTimePad(token, data[:tokenLength])
 
 	return token
 }
