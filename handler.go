@@ -23,7 +23,10 @@ func defaultFailureHandler(w http.ResponseWriter, r *http.Request) {
 
 // New CSRFHandler is generated
 func New(handler http.Handler) *CSRFHandler {
-	baseCookie := http.Cookie{}
+	baseCookie := http.Cookie{
+		MaxAge: 31536000,
+		Secure: true,
+	}
 	baseCookie.MaxAge = 31536000
 	csrf := &CSRFHandler{
 		successHandler: handler,
